@@ -31,7 +31,17 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
+!.env.example
+
+# database
+/prisma/*.db
+/prisma/*.db-journal
+
+# playwright
+/playwright-report/
+/test-results/
 
 # vercel
 .vercel

@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# revers-mf — Weight Trend Tracker
 
-## Getting Started
+A mobile-first weight tracking web app with EWMA trend analytics, built with Next.js, Prisma, and Tailwind CSS.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Scale Weight** — log daily weight entries (kg)
+- **Weight Trend** — EWMA-smoothed trend line with interpolation for missing days
+- **Dashboard** — KPIs, Recharts chart, period filters, daily breakdown table
+- **Passcode auth** — lightweight single-user gate
+
+## Tech stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS + Radix UI primitives
+- Prisma ORM (SQLite local / PostgreSQL on Vercel)
+- Recharts + Playwright
+
+## Prerequisites
+
+Use [NVS](https://github.com/jasongin/nvs) for Node.js:
+
+```powershell
+$env:NVS_HOME = "$env:LOCALAPPDATA\nvs"
+. "$env:NVS_HOME\nvs.ps1"
+nvs add lts
+nvs use lts
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Local development
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+cp .env.example .env
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+npm run db:generate:local
+npm run db:push:local
+npm run db:seed
 
-## Learn More
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000). Default passcode: `1234`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Dev server (SQLite, regenerates Prisma client) |
+| `npm run build` | Production build (Postgres Prisma client) |
+| `npm run db:seed` | Seed user and ~30 days of sample weights |
+| `npm run db:seed:test` | Reset DB with Playwright fixture data |
+| `npm run test:e2e` | Playwright end-to-end tests |
 
-## Deploy on Vercel
+## Vercel deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Create a Vercel Postgres database and attach to the project.
+2. Set environment variables:
+   - `POSTGRES_PRISMA_URL`
+   - `POSTGRES_URL_NON_POOLING`
+   - `SESSION_SECRET`
+   - `SEED_PASSCODE` (optional, for seeding)
+3. Build command:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+   ```
+   prisma generate --schema=prisma/schema.prisma && prisma db push --schema=prisma/schema.prisma && next build
+   ```
+
+4. Run `npm run db:seed` once against production (or use Vercel CLI).
+
+## Analytics
+
+Trend values are computed in memory (`utils/analytics.ts`) using EWMA with α = 0.1. Missing days between entries are filled via linear interpolation. Only raw scale weights are stored in the database.
+
+## License
+
+Private — personal use.
