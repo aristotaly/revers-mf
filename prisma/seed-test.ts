@@ -1,13 +1,17 @@
+import fs from "fs";
+import path from "path";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 import { buildDailySeries, normalizeDate, toDateKey } from "../utils/analytics";
 
 const prisma = new PrismaClient();
 
+export type SeedMode = "default" | "ewma" | "gap" | "macrofactor";
+
 /** Fixed "today" for deterministic Playwright assertions */
 export const TEST_TODAY = new Date("2026-05-18T00:00:00.000Z");
 
-export async function seedTestUser(mode: "default" | "ewma" | "gap" = "default") {
+export async function seedTestUser(mode: SeedMode = "default") {
   const passcode = process.env.SEED_PASSCODE ?? "1234";
   const hash = await bcrypt.hash(passcode, 10);
 
@@ -62,6 +66,29 @@ export async function seedTestUser(mode: "default" | "ewma" | "gap" = "default")
     return user;
   }
 
+  if (mode === "macrofactor") {
+    const dataPath = path.join(
+      process.cwd(),
+      "scripts",
+      "macrofactor-logged.json",
+    );
+    const data = JSON.parse(fs.readFileSync(dataPath, "utf-8")) as {
+      entries: { date: string; weight: number }[];
+    };
+    // Bulk-insert 443 entries efficiently
+    const records = data.entries.map((e) => {
+      const [y, m, d] = e.date.split("-").map((s) => parseInt(s, 10));
+      return {
+        userId: user.id,
+        date: normalizeDate(new Date(Date.UTC(y, m - 1, d))),
+        weight: e.weight,
+      };
+    });
+    // SQLite/Prisma: createMany is supported for SQLite in Prisma 6
+    await prisma.weightEntry.createMany({ data: records });
+    return user;
+  }
+
   for (let i = 0; i < 14; i++) {
     const date = new Date(TEST_TODAY);
     date.setUTCDate(date.getUTCDate() - i);
@@ -90,7 +117,7 @@ export function expectedTrendForEwmaTest() {
   return byKey;
 }
 
-const mode = (process.argv[2] as "default" | "ewma" | "gap") ?? "default";
+const mode = (process.argv[2] as SeedMode) ?? "default";
 seedTestUser(mode)
   .then(() => prisma.$disconnect())
   .catch(async (e) => {

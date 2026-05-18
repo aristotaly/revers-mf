@@ -14,7 +14,7 @@ export type DailyPoint = {
   trendDelta: number;
 };
 
-const EWMA_ALPHA = 0.1;
+export const EWMA_ALPHA = 0.1;
 
 export function normalizeDate(date: Date): Date {
   return new Date(
@@ -139,7 +139,7 @@ export function sliceByWindow(
 
 export function computeKpis(
   allPoints: DailyPoint[],
-  loggedEntries: WeightEntryInput[],
+  _loggedEntries: WeightEntryInput[],
   window: TimeWindow,
   today: Date = new Date(),
 ) {
@@ -149,15 +149,12 @@ export function computeKpis(
     windowPoints[0]?.date ??
     (window === "All" ? allPoints[0]?.date : addDays(end, -30));
 
-  const loggedInWindow = loggedEntries.filter((e) => {
-    const d = normalizeDate(e.date);
-    return d >= (windowPoints[0]?.date ?? start) && d <= end;
-  });
-
+  // Average over the continuous daily TREND series in the window.
+  // This matches MacroFactor's "Average" KPI (averaging only logged scale
+  // weights would skew the mean during logging gaps).
   const average =
-    loggedInWindow.length > 0
-      ? loggedInWindow.reduce((sum, e) => sum + e.weight, 0) /
-        loggedInWindow.length
+    windowPoints.length > 0
+      ? windowPoints.reduce((sum, p) => sum + p.trend, 0) / windowPoints.length
       : 0;
 
   const firstTrend = windowPoints[0]?.trend ?? 0;

@@ -43,9 +43,16 @@ yarn-error.log*
 /playwright-report/
 /test-results/
 
+# import reports
+macrofactor-comparison.csv
+scripts/macrofactor-calendar-aligned.csv
+
 # vercel
 .vercel
+.env.production
+.env*.local
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+

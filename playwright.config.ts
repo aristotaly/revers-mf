@@ -18,9 +18,15 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run db:push:local && npm run db:seed && npm run dev",
+    command: "npm run db:push:local && npm run dev",
     url: "http://localhost:3000",
     reuseExistingServer: !process.env.CI,
-    timeout: 120000,
+    timeout: 180000,
+    env: {
+      DATABASE_URL: "file:./prisma/dev.db",
+      SEED_PASSCODE: "1234",
+      SEED_USER_NAME: "Me",
+      SESSION_SECRET: "dev-secret-change-in-production",
+    },
   },
 });

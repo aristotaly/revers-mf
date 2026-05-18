@@ -8,9 +8,9 @@
     "vercel-build": "prisma generate --schema=prisma/schema.prisma && prisma migrate deploy --schema=prisma/schema.prisma && next build",
     "start": "next start",
     "lint": "eslint",
-    "db:generate:local": "prisma generate --schema=prisma/schema.sqlite.prisma",
+    "db:generate:local": "cross-env DATABASE_URL=file:./prisma/dev.db prisma generate --schema=prisma/schema.sqlite.prisma",
     "db:generate:prod": "prisma generate --schema=prisma/schema.prisma",
-    "db:push:local": "prisma db push --schema=prisma/schema.sqlite.prisma",
+    "db:push:local": "cross-env DATABASE_URL=file:./prisma/dev.db prisma db push --schema=prisma/schema.sqlite.prisma --accept-data-loss",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:test": "tsx prisma/seed-test.ts",
     "test:e2e": "playwright test"
@@ -26,6 +26,7 @@
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cross-env": "^10.1.0",
     "lucide-react": "^0.546.0",
     "next": "16.2.6",
     "react": "19.2.4",
@@ -46,7 +47,8 @@
     "prisma": "^6.19.0",
     "tailwindcss": "^4",
     "tsx": "^4.20.5",
-    "typescript": "^5"
+    "typescript": "^5",
+    "xlsx": "^0.18.5"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

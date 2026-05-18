@@ -26,7 +26,10 @@ export function KpiSummary({
     <div className="flex items-start gap-4 px-4 py-4" data-testid="kpi-summary">
       <div className="flex-1">
         <p className="text-xs text-neutral-500">Average</p>
-        <p className="text-3xl font-bold tracking-tight text-neutral-900">
+        <p
+          className="text-3xl font-bold tracking-tight text-neutral-900"
+          data-testid="kpi-average"
+        >
           {average.toFixed(1)} kg
         </p>
         <p
@@ -38,7 +41,10 @@ export function KpiSummary({
       </div>
       <div className="flex-1">
         <p className="text-xs text-neutral-500">Difference</p>
-        <p className="text-3xl font-bold tracking-tight text-neutral-900">
+        <p
+          className="text-3xl font-bold tracking-tight text-neutral-900"
+          data-testid="kpi-difference"
+        >
           {diffLabel} kg
         </p>
       </div>
