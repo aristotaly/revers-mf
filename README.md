@@ -2,6 +2,8 @@
 
 A mobile-first weight tracking web app with EWMA trend analytics, built with Next.js, Prisma, and Tailwind CSS.
 
+> **Maintainers & contributors:** read [`MAINTAINING.md`](./MAINTAINING.md) for the long-form guide to architecture, the analytics math, deployment, and operations playbooks.
+
 ## Features
 
 - **Scale Weight** — log daily weight entries (kg)
