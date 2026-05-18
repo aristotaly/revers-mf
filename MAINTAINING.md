@@ -25,6 +25,7 @@ A long-form companion to the [README](./README.md). Read this first if you need 
 15. [Extending the app](#15-extending-the-app)
 16. [Known quirks and gotchas](#16-known-quirks-and-gotchas)
 17. [Conventions for AI assistants](#17-conventions-for-ai-assistants)
+18. [Progressive Web App (PWA)](#18-progressive-web-app-pwa)
 
 ---
 
@@ -770,3 +771,93 @@ If you're an AI editing this repo, please honor these rules:
 8. **The 565-day MacroFactor fixture is the source of truth** for KPI correctness. If you change `computeKpis`, the values in `MF_TARGETS` need a justified update with a comment.
 9. **Use the existing tools.** `Math.round(x * 10) / 10` for 1-decimal rounding; `normalizeDate` for date hygiene; `EWMA_ALPHA` instead of a magic 0.1.
 10. **When in doubt about MF parity**, run `python scripts/analyze_mf.py` and compare the table it prints against the test targets. That's the single ground-truth oracle.
+
+---
+
+## 18. Progressive Web App (PWA)
+
+The app is installable on iOS, Android, and desktop Chromium browsers. There is **no third-party PWA library** in the dependency tree — everything is hand-rolled on Next.js's built-in conventions plus a small custom service worker.
+
+### Files involved
+
+| File | Purpose |
+|------|---------|
+| `app/manifest.ts` | Generates `/manifest.webmanifest` at build/request time. Sets name, icons, theme color, `display: standalone`, `start_url: /weight-trend`, and two app shortcuts (Log weight, Weight trend). |
+| `public/sw.js` | The service worker. Precaches the offline shell + icons, cache-firsts `/_next/static/*`, network-firsts navigations with an offline fallback. |
+| `public/offline.html` | Static page shown when a navigation fails offline. Self-contained inline CSS, no JS, no Next.js. |
+| `public/icon-192.png`, `icon-512.png`, `icon-maskable.png`, `apple-icon.png`, `favicon.png` | Generated icon set. **Do not edit by hand** — re-run `npm run icons:generate`. |
+| `scripts/generate-pwa-icons.mjs` | Renders the icon SVG → PNG with `sharp`. Edit the SVG markup here and re-run the script to change branding. |
+| `components/pwa-register.tsx` | Client component, rendered once in the root layout. Registers `/sw.js` in production only. |
+| `components/install-prompt.tsx` | Client banner shown on the dashboard. Captures `beforeinstallprompt` on Chromium, shows iOS Add-to-Home-Screen hint otherwise. Hides itself when running standalone or after dismissal (persisted in `localStorage`). |
+| `app/layout.tsx` | Wires `metadata.manifest`, `metadata.icons.apple`, `metadata.appleWebApp`, and `viewport.themeColor`. Mounts `<PwaRegister />`. |
+| `next.config.ts` | Adds cache-control + content-type headers for `/sw.js`, `/manifest.webmanifest`, `/offline.html`, and the icon PNGs. |
+| `middleware.ts` | Whitelists `/manifest.webmanifest`, `/sw.js`, `/offline.html`, and `*.webmanifest|*.html` so the auth gate doesn't redirect them to `/login`. |
+| `tests/pwa.spec.ts` | Verifies the manifest shape, SW headers, offline shell, icon URLs, and that the root layout advertises the right `<link>`s. |
+
+### Caching strategy
+
+The service worker is deliberately conservative because the app is auth-gated and renders user-specific HTML:
+
+1. **Precache** (during `install`): `/offline.html`, `/manifest.webmanifest`, all icon PNGs.
+2. **Cache-first** for `/_next/static/*` (hashed, immutable build artifacts).
+3. **Network-first** for navigations. If `fetch` rejects (offline), respond with `/offline.html`.
+4. **Pass-through** everything else: Server Actions, `/_next/data/*`, `/_next/image`, RSC payloads. These must always go to the network.
+
+> **Never** add HTML responses to the runtime cache — they contain per-user data, and you'd accidentally serve admin's dashboard to a logged-out browser tab.
+
+### Versioning the cache
+
+The cache keys embed a `VERSION` constant at the top of `public/sw.js`. Bump it (`v1` → `v2` etc.) whenever you change the precache list or the SW logic — old clients will purge stale caches on `activate`.
+
+If you change a precached asset (e.g. swap an icon) you don't strictly need to bump the version, because the precache step uses `cache.addAll(PRECACHE_URLS)` which fetches fresh copies during install. But bumping is the safe, no-brain option.
+
+### Regenerating icons
+
+```powershell
+# Edit the SVG markup in scripts/generate-pwa-icons.mjs, then:
+npm run icons:generate
+```
+
+This rewrites all five PNGs in `public/`. Commit the regenerated files. The script uses [`sharp`](https://sharp.pixelplumbing.com/) (pinned as a devDependency).
+
+If you want to tweak the brand color, change `BRAND` and `BRAND_DARK` in the script and also update:
+- `theme_color` in `app/manifest.ts`
+- `viewport.themeColor` in `app/layout.tsx`
+- The hex literals in `public/offline.html`
+
+### What makes the app installable
+
+Chromium's install promptability checks (the bar for the address-bar install icon to appear and `beforeinstallprompt` to fire):
+
+- ✅ Served over HTTPS (Vercel handles this)
+- ✅ `manifest.webmanifest` with `name`, `short_name`, `start_url`, `display: standalone`, and at least one 192×192 PNG icon
+- ✅ Registered service worker with a `fetch` handler
+- ✅ `theme_color` for the title bar
+
+Safari/iOS doesn't use `beforeinstallprompt`; the user must tap Share → Add to Home Screen. The `InstallPrompt` component shows a one-time hint on iOS to teach them.
+
+### Testing the PWA
+
+```powershell
+# Local: 5-test PWA suite (runs as part of the full suite too)
+npx playwright test tests/pwa.spec.ts --reporter=list
+```
+
+To manually verify install on the live site:
+
+1. Open [https://revers-mf.vercel.app](https://revers-mf.vercel.app) in Chrome.
+2. Open DevTools → **Application** → **Manifest**. Confirm: name, theme color, icons all render, "Identity" is green.
+3. **Application** → **Service Workers**. Confirm `sw.js` is "activated and running".
+4. Address-bar install icon should appear. Click it.
+
+### Local dev caveats
+
+- `PwaRegister` is a no-op in development (`process.env.NODE_ENV !== "production"`). This keeps the SW out of your way while iterating — no surprise stale caches.
+- If you want to test the SW locally, run `npm run build && npm run start` instead of `npm run dev`.
+- iOS Safari only registers a service worker over HTTPS or `http://localhost`. Vercel preview URLs are HTTPS so this is automatic.
+
+### Known limitations
+
+- **No push notifications.** The Next.js PWA guide includes a VAPID/web-push setup; we deliberately skipped it because there's nothing to notify about. If you ever add reminders ("you haven't logged in 3 days"), the recipe in `node_modules/next/dist/docs/01-app/02-guides/progressive-web-apps.md` is the starting point.
+- **No background sync.** Entries created while offline are not queued — the upsert Server Action will simply fail. If you need write-while-offline, store pending entries in IndexedDB and replay them on the next online tick using the Background Sync API.
+- **No app store distribution.** The PWA is install-only-from-browser. Wrapping it in Trusted Web Activity (Android Play Store) or PWABuilder is a future option.

@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login"];
+const PUBLIC_FILES = new Set([
+  "/manifest.webmanifest",
+  "/sw.js",
+  "/offline.html",
+  "/robots.txt",
+]);
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -9,7 +15,8 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
-    pathname.match(/\.(ico|png|jpg|jpeg|svg|css|js)$/)
+    pathname.match(/\.(ico|png|jpg|jpeg|svg|webp|css|js|webmanifest|html)$/) ||
+    PUBLIC_FILES.has(pathname)
   ) {
     return NextResponse.next();
   }

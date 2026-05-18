@@ -9,7 +9,8 @@ A mobile-first weight tracking web app with EWMA trend analytics, built with Nex
 - **Scale Weight** — log daily weight entries (kg)
 - **Weight Trend** — EWMA-smoothed trend line with interpolation for missing days
 - **Dashboard** — KPIs, Recharts chart, period filters, daily breakdown table
-- **Passcode auth** — lightweight single-user gate
+- **Username + password auth** — lightweight single-user gate
+- **Installable PWA** — add to home screen on iOS/Android, install as a desktop app on Chrome/Edge, with an offline fallback shell
 
 ## Tech stack
 
@@ -73,6 +74,22 @@ Open [http://localhost:3000](http://localhost:3000). Default passcode: `1234`.
 ## Analytics
 
 Trend values are computed in memory (`utils/analytics.ts`) using EWMA with α = 0.1. Missing days between entries are filled via linear interpolation. Only raw scale weights are stored in the database.
+
+## Installing as an app
+
+The app ships as a Progressive Web App (PWA) and can be installed on every major platform:
+
+- **iOS (Safari)** — open in Safari, tap the Share button, then **Add to Home Screen**. The in-app banner walks you through it on first visit.
+- **Android (Chrome / Edge / Brave)** — accept the **Install Weight Trend** prompt, or use the browser menu's **Install app** entry.
+- **Desktop (Chrome / Edge / Brave)** — click the install icon in the URL bar, or **⋮ → Install Weight Trend**.
+
+Once installed, the app runs fullscreen, gets its own icon, and falls back to a friendly offline screen when the network is gone. To regenerate icons after editing the artwork:
+
+```bash
+npm run icons:generate
+```
+
+See [`MAINTAINING.md`](./MAINTAINING.md#18-progressive-web-app-pwa) for the full PWA implementation details.
 
 ## License
 

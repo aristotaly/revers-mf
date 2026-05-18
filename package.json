@@ -13,7 +13,8 @@
     "db:push:local": "cross-env DATABASE_URL=file:./prisma/dev.db prisma db push --schema=prisma/schema.sqlite.prisma --accept-data-loss",
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:test": "tsx prisma/seed-test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "icons:generate": "node scripts/generate-pwa-icons.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
@@ -45,6 +46,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "prisma": "^6.19.0",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
     "tsx": "^4.20.5",
     "typescript": "^5",

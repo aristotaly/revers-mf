@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AppHeader } from "@/components/layout/app-header";
+import { InstallPrompt } from "@/components/install-prompt";
 import type { DailyPoint } from "@/utils/analytics";
 import { DashboardClient } from "./dashboard-client";
 import { TutorialBanner } from "./tutorial-banner";
@@ -28,6 +29,7 @@ export function WeightTrendShell({
         showTutorialIcon
         onTutorialClick={() => setShowTutorial(true)}
       />
+      <InstallPrompt />
       <DashboardClient
         allPoints={allPoints}
         loggedEntries={loggedEntries}

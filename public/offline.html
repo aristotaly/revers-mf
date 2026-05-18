@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#5b21b6" />
+    <title>Offline · Weight Trend</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        min-height: 100%;
+        font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: #fafafa;
+        color: #171717;
+      }
+      main {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        text-align: center;
+      }
+      .icon {
+        width: 96px;
+        height: 96px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, #5b21b6, #3b0764);
+        display: grid;
+        place-items: center;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 10px 30px -10px rgba(91, 33, 182, 0.5);
+      }
+      .icon svg {
+        width: 56px;
+        height: 56px;
+      }
+      h1 {
+        font-size: 1.5rem;
+        margin: 0 0 0.5rem;
+        font-weight: 700;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        color: #525252;
+        max-width: 24rem;
+        line-height: 1.5;
+      }
+      button {
+        appearance: none;
+        border: 0;
+        background: #5b21b6;
+        color: #fff;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #4c1d95;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 9 12 13 9 17 14 21 17"></polyline>
+          <circle cx="21" cy="17" r="1.3" fill="white"></circle>
+        </svg>
+      </div>
+      <h1>You're offline</h1>
+      <p>Your weight tracker needs an internet connection to read or save entries. Reconnect, then try again.</p>
+      <button type="button" onclick="location.reload()">Retry</button>
+    </main>
+  </body>
+</html>
