@@ -36,8 +36,8 @@ yarn-error.log*
 !.env.example
 
 # database
-/prisma/*.db
-/prisma/*.db-journal
+/prisma/**/*.db
+/prisma/**/*.db-journal
 
 # playwright
 /playwright-report/
