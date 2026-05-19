@@ -46,7 +46,11 @@ export function LoginForm() {
           data-testid="password-input"
         />
       </div>
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="text-sm text-red-600" data-testid="login-error">
+          {error}
+        </p>
+      )}
       <Button
         type="submit"
         className="w-full"

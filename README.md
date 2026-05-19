@@ -43,7 +43,7 @@ npm run db:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Default passcode: `1234`.
+Open [http://localhost:3000](http://localhost:3000). Default credentials: **admin / 1234**. New users created from the `/admin` console always start with role `user`; promote them from the user list.
 
 ## Scripts
 

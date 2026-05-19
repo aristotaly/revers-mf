@@ -1,6 +1,6 @@
 /**
- * Apply the username migration to Vercel Postgres (idempotent) and set the
- * production credentials to admin / Amdocs101.
+ * Apply the username + role migrations to Vercel Postgres (idempotent) and set
+ * the production admin credentials to admin / Amdocs101.
  *
  * Usage:
  *   set NODE_TLS_REJECT_UNAUTHORIZED=0
@@ -19,30 +19,44 @@ const TARGET_PASSWORD = process.env.PROD_PASSWORD ?? "Amdocs101";
 const TARGET_NAME = process.env.PROD_USER_NAME ?? "Admin";
 
 async function main() {
-  // 1. Run the column migration in an idempotent way. This mirrors the SQL
-  // in prisma/migrations/20260518150000_add_user_username/migration.sql so we
-  // can apply it without relying on `prisma migrate deploy` being run yet.
+  // 1. Idempotent username column / unique index. Mirrors
+  // prisma/migrations/20260518150000_add_user_username/migration.sql.
   console.log("Ensuring 'username' column exists on User table...");
   await prisma.$executeRawUnsafe(
     'ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "username" TEXT',
   );
-
   await prisma.$executeRawUnsafe(
     `UPDATE "User" SET "username" = $1 WHERE "username" IS NULL`,
     TARGET_USERNAME.toLowerCase(),
   );
-
-  // Make sure it is NOT NULL (no-op if already).
   await prisma.$executeRawUnsafe(
     'ALTER TABLE "User" ALTER COLUMN "username" SET NOT NULL',
   );
-
-  // Add the unique index if missing.
   await prisma.$executeRawUnsafe(
     'CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User"("username")',
   );
+  console.log("Username column + unique index OK.");
 
-  console.log("Column + unique index OK.");
+  // 1b. Idempotent role column. Mirrors
+  // prisma/migrations/20260519100000_add_user_role/migration.sql.
+  console.log("Ensuring 'role' column exists on User table...");
+  await prisma.$executeRawUnsafe(
+    'ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "role" TEXT',
+  );
+  await prisma.$executeRawUnsafe(
+    `UPDATE "User" SET "role" = 'admin' WHERE "username" = $1 AND "role" IS NULL`,
+    TARGET_USERNAME.toLowerCase(),
+  );
+  await prisma.$executeRawUnsafe(
+    `UPDATE "User" SET "role" = 'user' WHERE "role" IS NULL`,
+  );
+  await prisma.$executeRawUnsafe(
+    `ALTER TABLE "User" ALTER COLUMN "role" SET DEFAULT 'user'`,
+  );
+  await prisma.$executeRawUnsafe(
+    'ALTER TABLE "User" ALTER COLUMN "role" SET NOT NULL',
+  );
+  console.log("Role column OK.");
 
   // 2. Upsert the production credentials on the existing seed-user.
   const hash = await bcrypt.hash(TARGET_PASSWORD, 10);
@@ -52,18 +66,20 @@ async function main() {
       username: TARGET_USERNAME.toLowerCase(),
       name: TARGET_NAME,
       passcodeHash: hash,
+      role: "admin",
     },
     create: {
       id: "seed-user",
       username: TARGET_USERNAME.toLowerCase(),
       name: TARGET_NAME,
       passcodeHash: hash,
+      role: "admin",
     },
   });
 
   console.log(
     `User updated:`,
-    `id=${updated.id} username=${updated.username} name=${updated.name}`,
+    `id=${updated.id} username=${updated.username} name=${updated.name} role=${updated.role}`,
   );
   console.log(
     `\nCredentials: ${TARGET_USERNAME} / ${TARGET_PASSWORD} (stored as bcrypt hash)`,
