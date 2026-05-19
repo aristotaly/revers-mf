@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/session";
 import { buildDailySeries, normalizeDate } from "@/utils/analytics";
 import { WeightTrendShell } from "@/components/weight-trend/weight-trend-shell";
 
+export const dynamic = "force-dynamic";
+
 type Props = {
   searchParams: Promise<{ asOf?: string }>;
 };

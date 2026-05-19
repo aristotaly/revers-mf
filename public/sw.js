@@ -6,7 +6,7 @@
 //   - Network-only for everything else (Server Actions, auth, Prisma reads must always go live).
 //   - On a navigation failure (offline), fall back to /offline.html.
 
-const VERSION = "v1";
+const VERSION = "v2";
 const PRECACHE = `revers-mf-precache-${VERSION}`;
 const RUNTIME = `revers-mf-runtime-${VERSION}`;
 

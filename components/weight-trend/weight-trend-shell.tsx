@@ -53,6 +53,7 @@ export function WeightTrendShell({
         {currentUser?.role === "admin" && (
           <Link
             href="/admin"
+            prefetch={false}
             className="text-violet-700 underline"
             data-testid="admin-link"
           >
@@ -61,6 +62,7 @@ export function WeightTrendShell({
         )}
         <Link
           href="/logout"
+          prefetch={false}
           className="text-neutral-500 underline"
           data-testid="logout-link"
         >

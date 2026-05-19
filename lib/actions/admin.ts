@@ -46,28 +46,9 @@ export type AdminActionResult = {
 
 /** Lists every user with their weight-entry count. Admin only. */
 export async function listUsersAction(): Promise<AdminUserSummary[]> {
-  await requireAdmin();
-
-  const users = await prisma.user.findMany({
-    orderBy: [{ role: "asc" }, { username: "asc" }],
-    select: {
-      id: true,
-      username: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      _count: { select: { weightEntries: true } },
-    },
-  });
-
-  return users.map((u) => ({
-    id: u.id,
-    username: u.username,
-    name: u.name,
-    role: u.role === "admin" ? "admin" : "user",
-    entryCount: u._count.weightEntries,
-    createdAt: u.createdAt.toISOString(),
-  }));
+  const admin = await requireAdmin();
+  const { listUsersForAdmin } = await import("@/lib/admin/list-users");
+  return listUsersForAdmin(admin);
 }
 
 /**
