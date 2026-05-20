@@ -30,7 +30,7 @@ test.describe("Production admin console smoke", () => {
     await page.getByTestId("username-input").fill(PROD_USERNAME);
     await page.getByTestId("password-input").fill(PROD_PASSCODE);
     await page.getByTestId("login-submit").click();
-    await page.waitForURL("**/weight-trend");
+    await page.waitForURL("**/dashboard");
     await expect(page.getByTestId("admin-link")).toBeVisible();
 
     await page.goto("/admin");
@@ -51,7 +51,7 @@ test.describe("Production admin console smoke", () => {
     await page.getByTestId("username-input").fill(tempUsername);
     await page.getByTestId("password-input").fill(tempPassword);
     await page.getByTestId("login-submit").click();
-    await page.waitForURL("**/weight-trend");
+    await page.waitForURL("**/dashboard");
     await expect(page.getByTestId("admin-link")).toHaveCount(0);
 
     // 4. Back to admin, clean up.
@@ -60,7 +60,7 @@ test.describe("Production admin console smoke", () => {
     await page.getByTestId("username-input").fill(PROD_USERNAME);
     await page.getByTestId("password-input").fill(PROD_PASSCODE);
     await page.getByTestId("login-submit").click();
-    await page.waitForURL("**/weight-trend");
+    await page.waitForURL("**/dashboard");
     await page.goto("/admin");
     page.once("dialog", (d) => d.accept());
     await page.getByTestId(`delete-user-${tempUsername}`).click();
