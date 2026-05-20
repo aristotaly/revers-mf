@@ -12,7 +12,7 @@ test.describe("PWA installability", () => {
     expect(manifest.name).toBe("Weight Trend Tracker");
     expect(manifest.short_name).toBe("Weight Trend");
     expect(manifest.display).toBe("standalone");
-    expect(manifest.start_url).toBe("/weight-trend");
+    expect(manifest.start_url).toBe("/dashboard");
     expect(manifest.theme_color).toBe("#5b21b6");
 
     const sizes = manifest.icons.map((i: { sizes: string }) => i.sizes);

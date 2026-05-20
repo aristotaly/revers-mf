@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getSessionUserId } from "@/lib/session";
 import { buildDailySeries, normalizeDate } from "@/utils/analytics";
+import { defaultGoalStartWeight } from "@/utils/goal-progress";
 
 const goalSchema = z.object({
   targetWeight: z.coerce.number().positive().max(500),
@@ -50,23 +51,40 @@ export async function upsertUserGoal(formData: FormData) {
     return { error: "Enter a valid target weight." };
   }
 
-  let startWeight = parsed.data.startWeight;
-  if (startWeight == null) {
-    const allEntries = await prisma.weightEntry.findMany({
-      where: { userId },
-      orderBy: { date: "asc" },
-    });
-    if (allEntries.length > 0) {
-      const series = buildDailySeries(
-        allEntries.map((e) => ({ date: e.date, weight: e.weight })),
-      );
-      startWeight =
-        series.length > 0
-          ? series[series.length - 1].trendRounded
-          : allEntries[allEntries.length - 1].weight;
-    } else {
-      startWeight = parsed.data.targetWeight;
-    }
+  const existing = await prisma.weightGoal.findUnique({ where: { userId } });
+  const allEntries = await prisma.weightEntry.findMany({
+    where: { userId },
+    orderBy: { date: "asc" },
+  });
+  const loggedWeights = allEntries.map((e) => e.weight);
+  const series =
+    allEntries.length > 0
+      ? buildDailySeries(
+          allEntries.map((e) => ({ date: e.date, weight: e.weight })),
+          normalizeDate(new Date()),
+        )
+      : [];
+  const latestScale =
+    allEntries.length > 0 ? allEntries[allEntries.length - 1].weight : null;
+  const latestTrend =
+    series.length > 0 ? series[series.length - 1].trendRounded : null;
+  const currentWeight = latestScale ?? latestTrend ?? parsed.data.targetWeight;
+
+  const rawStart = formData.get("startWeight");
+  const startProvided =
+    typeof rawStart === "string" && rawStart.trim().length > 0;
+
+  let startWeight: number;
+  if (startProvided && parsed.data.startWeight != null) {
+    startWeight = parsed.data.startWeight;
+  } else if (existing) {
+    startWeight = existing.startWeight;
+  } else {
+    startWeight = defaultGoalStartWeight(
+      loggedWeights,
+      parsed.data.targetWeight,
+      currentWeight,
+    );
   }
 
   await prisma.weightGoal.upsert({
@@ -78,7 +96,7 @@ export async function upsertUserGoal(formData: FormData) {
     },
     update: {
       targetWeight: parsed.data.targetWeight,
-      startWeight,
+      ...(startProvided ? { startWeight } : {}),
     },
   });
 

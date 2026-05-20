@@ -21,7 +21,7 @@ async function login(
   await page.getByTestId("username-input").fill(username);
   await page.getByTestId("password-input").fill(password);
   await page.getByTestId("login-submit").click();
-  await page.waitForURL("**/weight-trend");
+  await page.waitForURL("**/dashboard");
 }
 
 async function logout(page: Page) {
@@ -52,7 +52,7 @@ test.describe("Admin console", () => {
     await expect(page.getByTestId("admin-link")).toHaveCount(0);
     // Non-admin hitting /admin should be redirected away.
     await page.goto("/admin");
-    await page.waitForURL("**/weight-trend");
+    await page.waitForURL("**/dashboard");
   });
 
   test("create user via simplified modal + toast notification", async ({
@@ -75,7 +75,7 @@ test.describe("Admin console", () => {
     // The new user must be able to log in with the password we set.
     await logout(page);
     await login(page, "alice", "alice1234");
-    await expect(page).toHaveURL(/\/weight-trend/);
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 
   test("admin can reset another user's password", async ({ page }) => {

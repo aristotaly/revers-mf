@@ -64,16 +64,17 @@ export function GoalForm({ goal, suggestedStartWeight }: GoalFormProps) {
           type="number"
           step="0.1"
           min="0"
-          placeholder={
-            suggestedStartWeight != null
-              ? String(suggestedStartWeight)
-              : "Uses latest trend if empty"
-          }
+          placeholder="Auto: highest logged weight (loss) or lowest (gain)"
           defaultValue={goal?.startWeight}
           data-testid="start-weight-input"
         />
         <p className="text-xs text-neutral-500">
-          Leave blank to use your current trend weight when saving.
+          Leave blank when creating a goal to use your historical high (weight
+          loss) or low (weight gain)—not today&apos;s weight. When editing,
+          blank keeps your saved starting weight.
+          {suggestedStartWeight != null && (
+            <> Current scale: {suggestedStartWeight.toFixed(1)} kg.</>
+          )}
         </p>
       </div>
       {error && (

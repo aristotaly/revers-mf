@@ -16,6 +16,10 @@ async function main() {
   const passcode = process.env.SEED_PASSCODE ?? "1234";
   const hash = await bcrypt.hash(passcode, 10);
 
+  await prisma.user.deleteMany({
+    where: { username, id: { not: "seed-user" } },
+  });
+
   const user = await prisma.user.upsert({
     where: { id: "seed-user" },
     update: { name, username, passcodeHash: hash, role: "admin" },

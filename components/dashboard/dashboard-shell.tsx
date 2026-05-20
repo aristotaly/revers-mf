@@ -7,6 +7,9 @@ import { WeighInCard } from "./weigh-in-card";
 import { WeightTrendMiniCard } from "./weight-trend-mini-card";
 import { GoalProgressCard } from "./goal-progress-card";
 import { InstallPrompt } from "@/components/install-prompt";
+import { WeeklyReportButton } from "./weekly-report-button";
+import { LogoutButton } from "@/components/layout/logout-button";
+import { getCurrentWeekRangeLocal } from "@/lib/dashboard/week-report";
 
 type DashboardShellProps = {
   data: DashboardPayload;
@@ -14,6 +17,8 @@ type DashboardShellProps = {
 };
 
 export function DashboardShell({ data, currentUser }: DashboardShellProps) {
+  const { label: weekLabel } = getCurrentWeekRangeLocal();
+
   return (
     <div className="min-h-screen bg-neutral-100 pb-20">
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-neutral-100 px-4 py-4">
@@ -24,16 +29,19 @@ export function DashboardShell({ data, currentUser }: DashboardShellProps) {
               <p className="text-sm text-neutral-500">Hi, {currentUser.name}</p>
             )}
           </div>
-          {currentUser?.role === "admin" && (
-            <Link
-              href="/admin"
-              prefetch={false}
-              className="text-sm text-violet-700 underline"
-              data-testid="admin-link"
-            >
-              Users
-            </Link>
-          )}
+          <div className="flex shrink-0 flex-col items-end gap-2">
+            {currentUser?.role === "admin" && (
+              <Link
+                href="/admin"
+                prefetch={false}
+                className="text-sm text-violet-700 underline"
+                data-testid="admin-link"
+              >
+                Users
+              </Link>
+            )}
+            <LogoutButton username={currentUser?.username} />
+          </div>
         </div>
       </header>
 
@@ -56,6 +64,13 @@ export function DashboardShell({ data, currentUser }: DashboardShellProps) {
             Insights &amp; Analytics
           </h2>
           <GoalProgressCard goal={data.goal} />
+          <div className="mt-3">
+            <WeeklyReportButton
+              weekLabel={weekLabel}
+              days={data.weekReport}
+              userName={currentUser?.name}
+            />
+          </div>
         </section>
       </div>
     </div>

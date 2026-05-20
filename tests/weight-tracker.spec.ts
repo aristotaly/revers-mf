@@ -23,7 +23,7 @@ async function login(page: import("@playwright/test").Page) {
   await page.getByTestId("username-input").fill("admin");
   await page.getByTestId("password-input").fill("1234");
   await page.getByTestId("login-submit").click();
-  await page.waitForURL("**/weight-trend");
+  await page.waitForURL("**/dashboard");
 }
 
 test.describe("Weight Tracker", () => {

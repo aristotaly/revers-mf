@@ -22,16 +22,25 @@ export function GoalProgressCard({ goal }: GoalProgressCardProps) {
       <div className="mb-3">
         <h3 className="text-sm font-semibold text-neutral-900">Goal Progress</h3>
         <p className="text-xs text-neutral-500">{daysLabel}</p>
+        {goal && (
+          <p className="mt-1 text-xs text-neutral-600">
+            {goal.startWeight.toFixed(1)} → {goal.targetWeight.toFixed(1)} kg ·
+            now {goal.currentWeight.toFixed(1)} kg
+          </p>
+        )}
       </div>
       <div className="h-3 w-full overflow-hidden rounded-full bg-neutral-100">
         <div
           className="h-full rounded-full bg-emerald-500 transition-all"
           style={{ width: `${percent}%` }}
+          data-testid="goal-progress-bar"
         />
       </div>
       <div className="mt-3 flex items-center justify-between">
         <span className="text-sm font-medium text-neutral-800">
-          {goal ? `${percent} %` : "Set goal"}
+          {goal
+            ? `${percent}% · ${goal.kgRemaining} kg to go`
+            : "Set goal"}
         </span>
         <ChevronRight className="h-4 w-4 text-neutral-400" aria-hidden />
       </div>

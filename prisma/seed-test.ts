@@ -120,9 +120,6 @@ export function expectedTrendForEwmaTest() {
   return byKey;
 }
 
-// Only auto-run when invoked directly as a CLI (e.g. `tsx prisma/seed-test.ts ewma`).
-// When this module is *imported* by a test, we must not eagerly hit the database —
-// the importing process won't have DATABASE_URL set.
 const invokedFile = (process.argv[1] ?? "").replace(/\\/g, "/");
 const isDirectCLI = invokedFile.endsWith("/prisma/seed-test.ts");
 

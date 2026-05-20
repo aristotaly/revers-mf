@@ -5,6 +5,11 @@ import {
   toDateKey,
   type DailyPoint,
 } from "@/utils/analytics";
+import {
+  computeGoalProgressPercent,
+  resolveGoalStartWeight,
+} from "@/utils/goal-progress";
+import { buildWeekReportEntries, type WeekReportEntry } from "./week-report";
 
 export type WeighInDay = {
   date: string;
@@ -20,8 +25,10 @@ export type TrendMiniPoint = {
 export type DashboardGoal = {
   targetWeight: number;
   startWeight: number;
+  currentWeight: number;
   progressPercent: number;
   daysSinceStart: number;
+  kgRemaining: number;
 };
 
 export type DashboardPayload = {
@@ -29,7 +36,9 @@ export type DashboardPayload = {
   weekLogged: number;
   trendPoints7d: TrendMiniPoint[];
   latestTrend: number | null;
+  latestScale: number | null;
   goal: DashboardGoal | null;
+  weekReport: WeekReportEntry[];
 };
 
 function addDays(date: Date, days: number): Date {
@@ -82,18 +91,6 @@ function sliceLast7Trend(points: DailyPoint[]): TrendMiniPoint[] {
     .map((p) => ({ date: toDateKey(p.date), trend: p.trendRounded }));
 }
 
-function computeGoalProgress(
-  startWeight: number,
-  targetWeight: number,
-  currentTrend: number,
-): number {
-  const total = startWeight - targetWeight;
-  if (Math.abs(total) < 0.01) return 100;
-  const moved = startWeight - currentTrend;
-  const raw = (moved / total) * 100;
-  return Math.round(Math.min(100, Math.max(0, raw)));
-}
-
 export async function buildDashboardData(
   userId: string,
 ): Promise<DashboardPayload> {
@@ -120,18 +117,31 @@ export async function buildDashboardData(
   const trendPoints7d = sliceLast7Trend(allPoints);
   const latestTrend =
     allPoints.length > 0 ? allPoints[allPoints.length - 1].trendRounded : null;
+  const latestScale =
+    entries.length > 0 ? entries[entries.length - 1].weight : null;
+  const currentWeight = latestScale ?? latestTrend;
+  const allLoggedWeights = entries.map((e) => e.weight);
 
   let dashboardGoal: DashboardGoal | null = null;
-  if (goal && latestTrend != null) {
+  if (goal && currentWeight != null) {
+    const startWeight = resolveGoalStartWeight(
+      goal.startWeight,
+      goal.targetWeight,
+      allLoggedWeights,
+      currentWeight,
+    );
+    const progressPercent = computeGoalProgressPercent(
+      startWeight,
+      goal.targetWeight,
+      currentWeight,
+    );
     dashboardGoal = {
       targetWeight: goal.targetWeight,
-      startWeight: goal.startWeight,
-      progressPercent: computeGoalProgress(
-        goal.startWeight,
-        goal.targetWeight,
-        latestTrend,
-      ),
+      startWeight,
+      currentWeight,
+      progressPercent,
       daysSinceStart: daysBetween(goal.createdAt, today) + 1,
+      kgRemaining: Math.round(Math.abs(currentWeight - goal.targetWeight) * 10) / 10,
     };
   }
 
@@ -140,6 +150,8 @@ export async function buildDashboardData(
     weekLogged: countWeekLogged(entriesByDate, today),
     trendPoints7d,
     latestTrend,
+    latestScale,
     goal: dashboardGoal,
+    weekReport: buildWeekReportEntries(entriesByDate),
   };
 }
