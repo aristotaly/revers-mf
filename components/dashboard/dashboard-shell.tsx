@@ -6,6 +6,7 @@ import type { CurrentUser } from "@/lib/session";
 import { WeighInCard } from "./weigh-in-card";
 import { WeightTrendMiniCard } from "./weight-trend-mini-card";
 import { GoalProgressCard } from "./goal-progress-card";
+import { InstallPrompt } from "@/components/install-prompt";
 
 type DashboardShellProps = {
   data: DashboardPayload;
@@ -35,6 +36,8 @@ export function DashboardShell({ data, currentUser }: DashboardShellProps) {
           )}
         </div>
       </header>
+
+      <InstallPrompt />
 
       <div className="space-y-6 px-4 py-4">
         <section>

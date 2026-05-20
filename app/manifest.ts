@@ -43,6 +43,13 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       {
+        name: "Weigh-In history",
+        short_name: "Weigh-In",
+        description: "Calendar + multi-year weigh-in history",
+        url: "/weigh-in",
+        icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+      },
+      {
         name: "Weight trend",
         short_name: "Trend",
         description: "View your EWMA weight trend dashboard",

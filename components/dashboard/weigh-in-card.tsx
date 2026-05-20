@@ -26,7 +26,7 @@ export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
   return (
     <>
       <div
-        className="flex min-h-[168px] flex-col rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-100"
+        className="flex min-h-[180px] flex-col rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-100"
         data-testid="weigh-in-card"
       >
         <div className="mb-3">
@@ -34,7 +34,7 @@ export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
           <p className="text-xs text-neutral-500">Last 30 Days</p>
         </div>
         <div
-          className="grid flex-1 grid-cols-10 gap-1"
+          className="grid flex-1 grid-cols-10 gap-1.5"
           role="group"
           aria-label="Last 30 days weigh-in calendar"
         >
@@ -48,7 +48,7 @@ export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
                 openDay(day);
               }}
               className={
-                "aspect-square min-h-[14px] rounded-sm transition-colors " +
+                "aspect-square min-h-[12px] rounded-[5px] transition-colors " +
                 (day.hasEntry
                   ? "bg-emerald-500 hover:bg-emerald-600"
                   : "bg-neutral-100 hover:bg-neutral-200")
@@ -67,11 +67,18 @@ export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
             />
           ))}
         </div>
-        <div className="mt-3 flex items-center justify-between">
-          <span className="text-sm font-medium text-neutral-800">
+        <Link
+          href="/weigh-in"
+          prefetch={false}
+          className="mt-3 flex items-center justify-between border-t border-neutral-100 pt-3 text-neutral-800 transition-colors hover:text-neutral-950"
+          aria-label="Open weigh-in history"
+          data-testid="weigh-in-card-detail-link"
+        >
+          <span className="text-sm font-medium">
             {weekLogged}/7 this week
           </span>
-        </div>
+          <ChevronRight className="h-4 w-4 text-neutral-400" aria-hidden />
+        </Link>
       </div>
 
       {selected && (
