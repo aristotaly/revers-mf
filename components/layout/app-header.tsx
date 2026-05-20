@@ -11,7 +11,7 @@ type AppHeaderProps = {
 
 export function AppHeader({
   title,
-  backHref = "/weight-trend",
+  backHref = "/dashboard",
   rightAction,
   showTutorialIcon = false,
   onTutorialClick,

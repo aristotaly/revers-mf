@@ -14,16 +14,29 @@ import { Label } from "@/components/ui/label";
 import { upsertWeightEntry } from "@/lib/actions/weight-entries";
 
 type EntryFormDialogProps = {
-  trigger: React.ReactNode;
+  trigger?: React.ReactNode;
   initial?: {
-    weight: number;
+    weight?: number;
     date: string;
   };
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export function EntryFormDialog({ trigger, initial }: EntryFormDialogProps) {
-  const [open, setOpen] = useState(false);
+export function EntryFormDialog({
+  trigger,
+  initial,
+  open: controlledOpen,
+  onOpenChange,
+}: EntryFormDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled
+    ? (v: boolean) => onOpenChange?.(v)
+    : setInternalOpen;
 
   async function handleSubmit(formData: FormData) {
     setError(null);
@@ -35,17 +48,15 @@ export function EntryFormDialog({ trigger, initial }: EntryFormDialogProps) {
     setOpen(false);
   }
 
-  const dateValue =
-    initial?.date ??
-    new Date().toISOString().slice(0, 10);
+  const dateValue = initial?.date ?? new Date().toISOString().slice(0, 10);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {initial ? "Edit Weight" : "Add Weight"}
+            {initial?.weight != null ? "Edit Weight" : "Add Weight"}
           </DialogTitle>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
@@ -59,6 +70,7 @@ export function EntryFormDialog({ trigger, initial }: EntryFormDialogProps) {
               min="0"
               required
               defaultValue={initial?.weight}
+              key={`weight-${dateValue}-${initial?.weight ?? "new"}`}
               data-testid="weight-input"
             />
           </div>
@@ -70,6 +82,7 @@ export function EntryFormDialog({ trigger, initial }: EntryFormDialogProps) {
               type="date"
               required
               defaultValue={dateValue}
+              readOnly={isControlled}
               data-testid="date-input"
             />
           </div>

@@ -10,7 +10,7 @@ export function ScaleWeightPageClient({ entries }: { entries: ScaleEntry[] }) {
     <div className="min-h-screen bg-neutral-50">
       <AppHeader
         title="Scale Weight"
-        backHref="/weight-trend"
+        backHref="/dashboard"
         rightAction={
           <EntryFormDialog
             trigger={

@@ -12,7 +12,7 @@ export function ScaleWeightClient({ entries }: { entries: ScaleEntry[] }) {
   <>
     <AppHeader
       title="Scale Weight"
-      backHref="/weight-trend"
+      backHref="/dashboard"
       rightAction={
         <EntryFormDialog
           trigger={<HeaderAddButton onClick={() => setAddOpen(true)} />}

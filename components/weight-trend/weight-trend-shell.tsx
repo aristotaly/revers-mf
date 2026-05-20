@@ -24,10 +24,10 @@ export function WeightTrendShell({
   const [showTutorial, setShowTutorial] = useState(false);
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 pb-20">
       <AppHeader
         title="Weight Trend"
-        backHref="/"
+        backHref="/dashboard"
         showTutorialIcon
         onTutorialClick={() => setShowTutorial(true)}
       />

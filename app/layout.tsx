@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { PwaRegister } from "@/components/pwa-register";
+import { DashboardHomeButton } from "@/components/layout/dashboard-home-button";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -49,6 +50,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-neutral-50 font-sans antialiased">
         <div className="mx-auto min-h-screen max-w-md">{children}</div>
+        <DashboardHomeButton />
         <Toaster richColors position="top-center" />
         <PwaRegister />
       </body>

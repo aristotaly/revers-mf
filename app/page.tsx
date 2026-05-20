@@ -4,7 +4,7 @@ import { getSessionUserId } from "@/lib/session";
 export default async function HomePage() {
   const userId = await getSessionUserId();
   if (userId) {
-    redirect("/weight-trend");
+    redirect("/dashboard");
   }
   redirect("/login");
 }

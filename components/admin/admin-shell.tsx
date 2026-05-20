@@ -19,7 +19,7 @@ export function AdminShell({ currentUserId, users }: AdminShellProps) {
     <div className="min-h-screen bg-neutral-50">
       <AppHeader
         title="Users"
-        backHref="/weight-trend"
+        backHref="/dashboard"
         rightAction={
           <button
             type="button"

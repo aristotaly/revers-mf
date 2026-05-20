@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminPage() {
   const me = await getCurrentUser();
   if (!me) redirect("/login");
-  if (me.role !== "admin") redirect("/weight-trend");
+  if (me.role !== "admin") redirect("/dashboard");
 
   const users = await listUsersForAdmin(me);
 

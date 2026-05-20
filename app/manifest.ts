@@ -6,8 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Weight Trend",
     description:
       "Log daily scale weight and view your EWMA-smoothed weight trend.",
-    id: "/weight-trend",
-    start_url: "/weight-trend",
+    id: "/dashboard",
+    start_url: "/dashboard",
     scope: "/",
     display: "standalone",
     orientation: "portrait",

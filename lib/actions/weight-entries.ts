@@ -44,6 +44,7 @@ export async function upsertWeightEntry(formData: FormData) {
     },
   });
 
+  revalidatePath("/dashboard");
   revalidatePath("/weight-trend");
   revalidatePath("/scale-weight");
   revalidatePath("/weight-trend/logs");
@@ -55,6 +56,7 @@ export async function deleteWeightEntry(id: string) {
   await prisma.weightEntry.deleteMany({
     where: { id, userId },
   });
+  revalidatePath("/dashboard");
   revalidatePath("/weight-trend");
   revalidatePath("/scale-weight");
   revalidatePath("/weight-trend/logs");

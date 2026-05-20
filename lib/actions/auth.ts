@@ -28,7 +28,7 @@ export async function loginAction(
   }
 
   await createSession(user.id);
-  redirect("/weight-trend");
+  redirect("/dashboard");
 }
 
 export async function logoutAction() {

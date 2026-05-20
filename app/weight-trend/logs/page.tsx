@@ -21,7 +21,7 @@ export default async function WeightTrendLogsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <AppHeader title="Weight Trend" backHref="/weight-trend" />
+      <AppHeader title="Weight Trend" backHref="/dashboard" />
       <TrendLogList points={points} />
       <div className="px-4 pb-8">
         <Link href="/weight-trend" className="text-sm text-violet-700 underline">
