@@ -1,26 +1,47 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { FileDown } from "lucide-react";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import type { WeekReportEntry } from "@/lib/dashboard/week-report";
+import type { WeighInDay } from "@/lib/dashboard/build-dashboard-data";
+import {
+  buildWeekReportEntries,
+  getLast7DaysRangeLocal,
+  weighInDaysToEntriesMap,
+  type WeekReportEntry,
+} from "@/lib/dashboard/week-report";
 
 type WeeklyReportButtonProps = {
-  weekLabel: string;
-  days: WeekReportEntry[];
+  weighInDays: WeighInDay[];
   userName?: string;
 };
 
 export function WeeklyReportButton({
-  weekLabel,
-  days,
+  weighInDays,
   userName,
 }: WeeklyReportButtonProps) {
   const reportRef = useRef<HTMLDivElement>(null);
   const [pending, startTransition] = useTransition();
+  const [capture, setCapture] = useState<{
+    days: WeekReportEntry[];
+    label: string;
+  } | null>(null);
 
+  const entriesMap = useMemo(
+    () => weighInDaysToEntriesMap(weighInDays),
+    [weighInDays],
+  );
+
+  const last7Preview = useMemo(
+    () => buildWeekReportEntries(entriesMap),
+    [entriesMap],
+  );
+  const loggedPreview = last7Preview.filter((d) => d.weight != null);
+
+  const days = capture?.days ?? last7Preview;
+  const weekLabel = capture?.label ?? getLast7DaysRangeLocal().label;
   const logged = days.filter((d) => d.weight != null);
   const weights = logged.map((d) => d.weight!);
   const minW = weights.length ? Math.min(...weights) : 0;
@@ -35,10 +56,26 @@ export function WeeklyReportButton({
   }
 
   function handleDownload() {
-    const node = reportRef.current;
-    if (!node) return;
+    const now = new Date();
+    const reportDays = buildWeekReportEntries(entriesMap, now);
+    const { label } = getLast7DaysRangeLocal(now);
+
+    if (reportDays.every((d) => d.weight == null)) {
+      toast.error("No scale weights logged in the last 7 days.");
+      return;
+    }
 
     startTransition(async () => {
+      setCapture({ days: reportDays, label });
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+      const node = reportRef.current;
+      if (!node) {
+        toast.error("Could not generate image. Try again.");
+        setCapture(null);
+        return;
+      }
+
       try {
         const dataUrl = await toPng(node, {
           cacheBust: true,
@@ -46,12 +83,14 @@ export function WeeklyReportButton({
           backgroundColor: "#ffffff",
         });
         const link = document.createElement("a");
-        link.download = `scale-weight-week-${days[0]?.date ?? "report"}.png`;
+        link.download = `scale-weight-7d-${reportDays[0]?.date ?? "report"}.png`;
         link.href = dataUrl;
         link.click();
         toast.success("Weekly report downloaded");
       } catch {
         toast.error("Could not generate image. Try again.");
+      } finally {
+        setCapture(null);
       }
     });
   }
@@ -60,10 +99,11 @@ export function WeeklyReportButton({
   const chartH = 100;
   const points = logged
     .map((d, i) => {
+      const dayIndex = days.findIndex((x) => x.date === d.date);
       const x =
-        logged.length <= 1
+        days.length <= 1
           ? chartW / 2
-          : (i / (logged.length - 1)) * chartW;
+          : (dayIndex / (days.length - 1)) * chartW;
       const y = yForWeight(d.weight!, chartH);
       return `${x},${y}`;
     })
@@ -75,40 +115,45 @@ export function WeeklyReportButton({
         type="button"
         variant="outline"
         className="w-full"
-        disabled={pending || logged.length === 0}
+        disabled={pending || loggedPreview.length === 0}
         onClick={handleDownload}
         data-testid="weekly-report-button"
       >
         <FileDown className="h-4 w-4" />
         {pending ? "Generating…" : "Download weekly report (image)"}
       </Button>
-      {logged.length === 0 && (
+      {loggedPreview.length === 0 && (
         <p className="mt-1 text-center text-xs text-neutral-500">
-          Log at least one weight this week to generate a report.
+          Log at least one weight in the last 7 days to generate a report.
         </p>
       )}
 
-      {/* Off-screen card captured as PNG */}
       <div className="pointer-events-none fixed -left-[9999px] top-0">
         <div
           ref={reportRef}
-          className="w-[320px] rounded-2xl bg-white p-5 shadow-lg"
+          className="w-[360px] rounded-2xl bg-white p-5 shadow-lg"
           style={{ fontFamily: "system-ui, sans-serif" }}
         >
           <p className="text-xs font-medium uppercase tracking-wide text-violet-600">
             Weight Trend Tracker
           </p>
           <h2 className="mt-1 text-lg font-bold text-neutral-900">
-            Weekly Scale Report
+            7-Day Scale Report
           </h2>
           {userName && (
             <p className="text-sm text-neutral-600">{userName}</p>
           )}
           <p className="mt-1 text-sm text-neutral-500">{weekLabel}</p>
 
-          <div className="mt-4 grid grid-cols-7 gap-1 text-center">
+          <div
+            className="mt-4 grid gap-1 text-center"
+            style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}
+          >
             {days.map((d) => (
-              <div key={d.date} className="text-[10px] font-medium text-neutral-500">
+              <div
+                key={d.date}
+                className="text-[9px] font-medium leading-tight text-neutral-500"
+              >
                 {d.dayLabel}
               </div>
             ))}
@@ -143,11 +188,12 @@ export function WeeklyReportButton({
                   strokeWidth="2.5"
                   points={points}
                 />
-                {logged.map((d, i) => {
+                {logged.map((d) => {
+                  const dayIndex = days.findIndex((x) => x.date === d.date);
                   const x =
-                    logged.length <= 1
+                    days.length <= 1
                       ? chartW / 2
-                      : (i / (logged.length - 1)) * chartW;
+                      : (dayIndex / (days.length - 1)) * chartW;
                   const y = yForWeight(d.weight!, chartH);
                   return (
                     <circle

@@ -9,16 +9,12 @@ import { GoalProgressCard } from "./goal-progress-card";
 import { InstallPrompt } from "@/components/install-prompt";
 import { WeeklyReportButton } from "./weekly-report-button";
 import { LogoutButton } from "@/components/layout/logout-button";
-import { getCurrentWeekRangeLocal } from "@/lib/dashboard/week-report";
-
 type DashboardShellProps = {
   data: DashboardPayload;
   currentUser?: CurrentUser;
 };
 
 export function DashboardShell({ data, currentUser }: DashboardShellProps) {
-  const { label: weekLabel } = getCurrentWeekRangeLocal();
-
   return (
     <div className="min-h-screen bg-neutral-100 pb-20">
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-neutral-100 px-4 py-4">
@@ -66,8 +62,7 @@ export function DashboardShell({ data, currentUser }: DashboardShellProps) {
           <GoalProgressCard goal={data.goal} />
           <div className="mt-3">
             <WeeklyReportButton
-              weekLabel={weekLabel}
-              days={data.weekReport}
+              weighInDays={data.weighInDays}
               userName={currentUser?.name}
             />
           </div>

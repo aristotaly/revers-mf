@@ -6,33 +6,40 @@ export type WeekReportEntry = {
   weight: number | null;
 };
 
-/** Sunday 00:00 local → today (local), inclusive. */
-export function getCurrentWeekRangeLocal(now: Date = new Date()): {
+/** Last 7 calendar days ending on `now` (local), inclusive. */
+export function getLast7DaysRangeLocal(now: Date = new Date()): {
   start: Date;
   end: Date;
   label: string;
 } {
   const end = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const start = new Date(end);
-  start.setDate(end.getDate() - end.getDay());
+  start.setDate(end.getDate() - 6);
 
   const fmt = new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
   });
   const yearFmt = new Intl.DateTimeFormat("en-US", { year: "numeric" });
-  const label = `${fmt.format(start)} – ${fmt.format(end)}, ${yearFmt.format(end)}`;
+  const label = `Last 7 days: ${fmt.format(start)} – ${fmt.format(end)}, ${yearFmt.format(end)}`;
 
   return { start, end, label };
 }
 
-const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+/** @deprecated Use getLast7DaysRangeLocal */
+export const getCurrentWeekRangeLocal = getLast7DaysRangeLocal;
+
+const dayFmt = new Intl.DateTimeFormat("en-US", {
+  weekday: "short",
+  month: "numeric",
+  day: "numeric",
+});
 
 export function buildWeekReportEntries(
   entriesByDate: Map<string, number>,
   now: Date = new Date(),
 ): WeekReportEntry[] {
-  const { start, end } = getCurrentWeekRangeLocal(now);
+  const { start, end } = getLast7DaysRangeLocal(now);
   const result: WeekReportEntry[] = [];
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
@@ -40,10 +47,20 @@ export function buildWeekReportEntries(
     const key = toDateKey(normalizeDate(day));
     result.push({
       date: key,
-      dayLabel: DAY_LABELS[day.getDay()],
+      dayLabel: dayFmt.format(day),
       weight: entriesByDate.get(key) ?? null,
     });
   }
 
   return result;
+}
+
+export function weighInDaysToEntriesMap(
+  days: { date: string; weight?: number }[],
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const d of days) {
+    if (d.weight != null) map.set(d.date, d.weight);
+  }
+  return map;
 }
