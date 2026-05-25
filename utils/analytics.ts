@@ -222,3 +222,132 @@ export function formatTrendDelta(delta: number): string {
   const sign = delta > 0 ? "+" : "";
   return `${sign}${delta.toFixed(2)}`;
 }
+
+/** Rounded display trend (1 decimal), matching MacroFactor UI. */
+export function roundTrendKg(trend: number): number {
+  return Math.round(trend * 10) / 10;
+}
+
+function getLastPointOnOrBefore(
+  points: DailyPoint[],
+  target: Date,
+): DailyPoint | null {
+  const t = normalizeDate(target).getTime();
+  let found: DailyPoint | null = null;
+  for (const p of points) {
+    if (p.date.getTime() <= t) found = p;
+    else break;
+  }
+  return found;
+}
+
+/**
+ * Change in rounded trend weight over `lookbackDays` calendar days ending on `today`.
+ * MacroFactor "Weight Changes" uses the same rounded-trend endpoints as Difference KPIs.
+ */
+export function computeTrendChangeKg(
+  points: DailyPoint[],
+  lookbackDays: number,
+  today: Date = new Date(),
+): number | null {
+  if (points.length === 0 || lookbackDays < 1) return null;
+  const end = getLastPointOnOrBefore(points, today);
+  if (!end) return null;
+  const start = getLastPointOnOrBefore(
+    points,
+    addDays(normalizeDate(today), -lookbackDays),
+  );
+  if (!start) return null;
+  return (
+    Math.round(
+      (roundTrendKg(end.trend) - roundTrendKg(start.trend)) * 10,
+    ) / 10
+  );
+}
+
+/**
+ * Implied kcal per kg of trend weight change. MacroFactor's energy balance on the
+ * Weight Trend screen implies ~7620 kcal/kg (283 kcal/day for -0.26 kg/week).
+ * Standard literature often cites ~7700 kcal/kg adipose tissue.
+ */
+export const KCAL_PER_KG_TREND_WEIGHT = 7620;
+
+const THREE_WEEKS_DAYS = 21;
+
+export type WeightChangeRow = {
+  label: string;
+  days: number;
+  changeKg: number;
+};
+
+export type TrendInsights = {
+  weightChanges: WeightChangeRow[];
+  currentTrendKg: number;
+  /** kg/week, from rounded trend change over the past 21 days ÷ 3 */
+  weeklyChangeKg: number | null;
+  /** Negative = deficit, positive = surplus (kcal/day) */
+  energyBalanceKcalPerDay: number | null;
+  projection30Kg: number | null;
+  hasRateMetrics: boolean;
+};
+
+export function computeTrendInsights(
+  allPoints: DailyPoint[],
+  today: Date = new Date(),
+): TrendInsights {
+  const end = getLastPointOnOrBefore(allPoints, today);
+  const currentTrendKg = end ? roundTrendKg(end.trend) : 0;
+
+  const intervals: { label: string; days: number }[] = [
+    { label: "3-day", days: 3 },
+    { label: "7-day", days: 7 },
+    { label: "14-day", days: 14 },
+    { label: "30-day", days: 30 },
+    { label: "90-day", days: 90 },
+  ];
+
+  const weightChanges: WeightChangeRow[] = intervals.map(({ label, days }) => {
+    const change = computeTrendChangeKg(allPoints, days, today);
+    return {
+      label,
+      days,
+      changeKg: change ?? 0,
+    };
+  });
+
+  const change21 = computeTrendChangeKg(allPoints, THREE_WEEKS_DAYS, today);
+  const endPoint = getLastPointOnOrBefore(allPoints, today);
+  const start21 = endPoint
+    ? getLastPointOnOrBefore(
+        allPoints,
+        addDays(normalizeDate(today), -THREE_WEEKS_DAYS),
+      )
+    : null;
+  const spanDays =
+    endPoint && start21 ? daysBetween(start21.date, endPoint.date) : 0;
+  const hasRateMetrics = change21 != null && spanDays >= THREE_WEEKS_DAYS;
+
+  let weeklyChangeKg: number | null = null;
+  let energyBalanceKcalPerDay: number | null = null;
+  let projection30Kg: number | null = null;
+
+  if (hasRateMetrics && change21 != null) {
+    weeklyChangeKg = Math.round((change21 / 3) * 100) / 100;
+    energyBalanceKcalPerDay = Math.round(
+      (weeklyChangeKg * KCAL_PER_KG_TREND_WEIGHT) / 7,
+    );
+    projection30Kg =
+      Math.round(
+        (currentTrendKg + (weeklyChangeKg / 7) * 30) * 10,
+      ) / 10;
+  }
+
+  return {
+    weightChanges,
+    currentTrendKg,
+    weeklyChangeKg,
+    energyBalanceKcalPerDay,
+    projection30Kg,
+    hasRateMetrics,
+  };
+}

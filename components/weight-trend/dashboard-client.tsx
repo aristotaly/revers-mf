@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import type { DailyPoint, TimeWindow } from "@/utils/analytics";
-import { computeKpis, sliceByWindow } from "@/utils/analytics";
+import { computeKpis, computeTrendInsights, sliceByWindow } from "@/utils/analytics";
 import { KpiSummary } from "./kpi-summary";
 import { WeightChart } from "./weight-chart";
 import { PeriodFilter } from "./period-filter";
 import { TutorialBanner } from "./tutorial-banner";
+import { TrendInsightsPanel } from "./trend-insights-panel";
 import { DailyBreakdownTable } from "./daily-breakdown-table";
 
 type DashboardClientProps = {
@@ -33,6 +34,11 @@ export function DashboardClient({
     [allPoints, window, today],
   );
 
+  const trendInsights = useMemo(
+    () => computeTrendInsights(allPoints, today),
+    [allPoints, today],
+  );
+
   return (
     <>
       <KpiSummary
@@ -42,6 +48,7 @@ export function DashboardClient({
       />
       <WeightChart points={windowPoints} />
       <PeriodFilter active={window} onChange={setWindow} />
+      <TrendInsightsPanel insights={trendInsights} />
       <TutorialBanner />
       <DailyBreakdownTable points={windowPoints} />
     </>
