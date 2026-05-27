@@ -4,21 +4,20 @@ import type { DashboardGoal } from "@/lib/dashboard/build-dashboard-data";
 
 type GoalProgressCardProps = {
   goal: DashboardGoal | null;
+  /** Viewers see the card but can't navigate into the goal editor. */
+  readOnly?: boolean;
 };
 
-export function GoalProgressCard({ goal }: GoalProgressCardProps) {
+export function GoalProgressCard({ goal, readOnly }: GoalProgressCardProps) {
   const percent = goal?.progressPercent ?? 0;
   const daysLabel = goal
     ? `Last ${goal.daysSinceStart} Days`
-    : "Set your target";
+    : readOnly
+      ? "No goal set"
+      : "Set your target";
 
-  return (
-    <Link
-      href="/goal"
-      prefetch={false}
-      className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-100 transition-shadow hover:shadow-md"
-      data-testid="goal-progress-card"
-    >
+  const content = (
+    <>
       <div className="mb-3">
         <h3 className="text-sm font-semibold text-neutral-900">Goal Progress</h3>
         <p className="text-xs text-neutral-500">{daysLabel}</p>
@@ -40,10 +39,36 @@ export function GoalProgressCard({ goal }: GoalProgressCardProps) {
         <span className="text-sm font-medium text-neutral-800">
           {goal
             ? `${percent}% · ${goal.kgRemaining} kg to go`
-            : "Set goal"}
+            : readOnly
+              ? "—"
+              : "Set goal"}
         </span>
-        <ChevronRight className="h-4 w-4 text-neutral-400" aria-hidden />
+        {!readOnly && (
+          <ChevronRight className="h-4 w-4 text-neutral-400" aria-hidden />
+        )}
       </div>
+    </>
+  );
+
+  if (readOnly) {
+    return (
+      <div
+        className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-100"
+        data-testid="goal-progress-card"
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href="/goal"
+      prefetch={false}
+      className="block rounded-2xl bg-white p-4 shadow-sm ring-1 ring-neutral-100 transition-shadow hover:shadow-md"
+      data-testid="goal-progress-card"
+    >
+      {content}
     </Link>
   );
 }

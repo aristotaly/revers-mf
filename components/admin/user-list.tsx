@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { KeyRound, Shield, ShieldOff, Trash2 } from "lucide-react";
+import { Eye, KeyRound, Shield, ShieldOff, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -18,6 +18,7 @@ import {
   setUserRoleAction,
   type AdminUserSummary,
 } from "@/lib/actions/admin";
+import { ManageViewerAccessDialog } from "./manage-viewer-access-dialog";
 
 type UserListProps = {
   users: AdminUserSummary[];
@@ -26,6 +27,8 @@ type UserListProps = {
 
 export function UserList({ users, currentUserId }: UserListProps) {
   const [resetTarget, setResetTarget] = useState<AdminUserSummary | null>(null);
+  const [accessTarget, setAccessTarget] =
+    useState<AdminUserSummary | null>(null);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -35,6 +38,10 @@ export function UserList({ users, currentUserId }: UserListProps) {
 
   function handleToggleRole(user: AdminUserSummary) {
     clearError();
+    if (user.role === "viewer") {
+      // Viewer accounts don't switch via this button.
+      return;
+    }
     const newRole = user.role === "admin" ? "user" : "admin";
     if (
       !confirm(
@@ -57,9 +64,13 @@ export function UserList({ users, currentUserId }: UserListProps) {
 
   function handleDelete(user: AdminUserSummary) {
     clearError();
+    const entrySuffix =
+      user.role === "viewer"
+        ? ""
+        : ` This will also delete all ${user.entryCount} weight entries.`;
     if (
       !confirm(
-        `Delete user ${user.username}? This will also delete all ${user.entryCount} weight entries. This cannot be undone.`,
+        `Delete user ${user.username}?${entrySuffix} This cannot be undone.`,
       )
     ) {
       return;
@@ -89,6 +100,7 @@ export function UserList({ users, currentUserId }: UserListProps) {
       <ul className="overflow-hidden rounded-2xl bg-white shadow-sm">
         {users.map((user) => {
           const isSelf = user.id === currentUserId;
+          const isViewer = user.role === "viewer";
           return (
             <li
               key={user.id}
@@ -97,7 +109,7 @@ export function UserList({ users, currentUserId }: UserListProps) {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <p
                       className="truncate text-base font-semibold text-neutral-900"
                       data-testid={`user-username-${user.username}`}
@@ -114,13 +126,39 @@ export function UserList({ users, currentUserId }: UserListProps) {
                   <p className="truncate text-sm text-neutral-500">
                     {user.name}
                   </p>
-                  <p className="mt-0.5 text-xs text-neutral-400">
-                    {user.entryCount}{" "}
-                    {user.entryCount === 1 ? "entry" : "entries"} ·{" "}
-                    {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
+                  {isViewer ? (
+                    <p
+                      className="mt-0.5 text-xs text-neutral-400"
+                      data-testid={`viewer-targets-${user.username}`}
+                    >
+                      {user.viewerTargets.length === 0
+                        ? "No users assigned"
+                        : `Can view: ${user.viewerTargets
+                            .map((t) => t.username)
+                            .join(", ")}`}
+                      {" · "}
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </p>
+                  ) : (
+                    <p className="mt-0.5 text-xs text-neutral-400">
+                      {user.entryCount}{" "}
+                      {user.entryCount === 1 ? "entry" : "entries"} ·{" "}
+                      {new Date(user.createdAt).toLocaleDateString()}
+                    </p>
+                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
+                  {isViewer && (
+                    <IconButton
+                      onClick={() => setAccessTarget(user)}
+                      title="Manage viewer access"
+                      label={`Manage access for ${user.username}`}
+                      testId={`manage-access-${user.username}`}
+                      disabled={pending}
+                    >
+                      <Users className="h-4 w-4" />
+                    </IconButton>
+                  )}
                   <IconButton
                     onClick={() => setResetTarget(user)}
                     title="Reset password"
@@ -133,19 +171,25 @@ export function UserList({ users, currentUserId }: UserListProps) {
                   <IconButton
                     onClick={() => handleToggleRole(user)}
                     title={
-                      user.role === "admin"
-                        ? "Demote to user"
-                        : "Promote to admin"
+                      isViewer
+                        ? "Viewer roles can't be changed here"
+                        : user.role === "admin"
+                          ? "Demote to user"
+                          : "Promote to admin"
                     }
                     label={
-                      user.role === "admin"
-                        ? `Demote ${user.username}`
-                        : `Promote ${user.username}`
+                      isViewer
+                        ? `${user.username} is a viewer`
+                        : user.role === "admin"
+                          ? `Demote ${user.username}`
+                          : `Promote ${user.username}`
                     }
                     testId={`toggle-role-${user.username}`}
-                    disabled={pending || isSelf}
+                    disabled={pending || isSelf || isViewer}
                   >
-                    {user.role === "admin" ? (
+                    {isViewer ? (
+                      <Eye className="h-4 w-4" />
+                    ) : user.role === "admin" ? (
                       <ShieldOff className="h-4 w-4" />
                     ) : (
                       <Shield className="h-4 w-4" />
@@ -173,15 +217,28 @@ export function UserList({ users, currentUserId }: UserListProps) {
         onClose={() => setResetTarget(null)}
         onError={setGlobalError}
       />
+
+      <ManageViewerAccessDialog
+        viewer={accessTarget}
+        onClose={() => setAccessTarget(null)}
+        onError={setGlobalError}
+      />
     </div>
   );
 }
 
-function RolePill({ role }: { role: "admin" | "user" }) {
+function RolePill({ role }: { role: "admin" | "user" | "viewer" }) {
   if (role === "admin") {
     return (
       <span className="rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
         admin
+      </span>
+    );
+  }
+  if (role === "viewer") {
+    return (
+      <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+        viewer
       </span>
     );
   }

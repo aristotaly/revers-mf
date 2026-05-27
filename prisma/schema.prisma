@@ -18,6 +18,21 @@ model User {
   updatedAt     DateTime      @updatedAt
   weightEntries WeightEntry[]
   weightGoal    WeightGoal?
+  viewerAccess  ViewerAccess[] @relation("ViewerAccessViewer")
+  viewableBy    ViewerAccess[] @relation("ViewerAccessTarget")
+}
+
+model ViewerAccess {
+  id        String   @id @default(uuid())
+  viewerId  String
+  targetId  String
+  createdAt DateTime @default(now())
+  viewer    User     @relation("ViewerAccessViewer", fields: [viewerId], references: [id], onDelete: Cascade)
+  target    User     @relation("ViewerAccessTarget", fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@unique([viewerId, targetId])
+  @@index([viewerId])
+  @@index([targetId])
 }
 
 model WeightGoal {

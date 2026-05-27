@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getSessionUserId } from "@/lib/session";
+import { getSessionUserId, requireWriter } from "@/lib/session";
 import { normalizeDate } from "@/utils/analytics";
 
 const entrySchema = z.object({
@@ -11,14 +11,17 @@ const entrySchema = z.object({
   date: z.coerce.date(),
 });
 
-async function requireUserId(): Promise<string> {
-  const userId = await getSessionUserId();
-  if (!userId) throw new Error("Unauthorized");
-  return userId;
+/**
+ * Resolve the writer's userId. Throws for viewers — they must never reach
+ * a mutating server action, even if they hand-craft a fetch call.
+ */
+async function requireWriterUserId(): Promise<string> {
+  const me = await requireWriter();
+  return me.id;
 }
 
 export async function upsertWeightEntry(formData: FormData) {
-  const userId = await requireUserId();
+  const userId = await requireWriterUserId();
   const parsed = entrySchema.safeParse({
     weight: formData.get("weight"),
     date: formData.get("date"),
@@ -52,7 +55,7 @@ export async function upsertWeightEntry(formData: FormData) {
 }
 
 export async function deleteWeightEntry(id: string) {
-  const userId = await requireUserId();
+  const userId = await requireWriterUserId();
   await prisma.weightEntry.deleteMany({
     where: { id, userId },
   });

@@ -1,15 +1,26 @@
 import { redirect } from "next/navigation";
-import { getSessionUserId } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
+import { resolvePageView } from "@/lib/viewer";
 import { buildWeighInDetailData } from "@/lib/weigh-in/build-detail-data";
 import { WeighInDetailShell } from "@/components/weigh-in/weigh-in-detail-shell";
 
 export const dynamic = "force-dynamic";
 
 export default async function WeighInDetailPage() {
-  const userId = await getSessionUserId();
-  if (!userId) redirect("/login");
+  const me = await getCurrentUser();
+  if (!me) redirect("/login");
 
-  const data = await buildWeighInDetailData(userId);
+  const view = await resolvePageView(me);
+  if (!view) redirect("/dashboard");
 
-  return <WeighInDetailShell data={data} />;
+  const data = await buildWeighInDetailData(view.viewing.id);
+
+  return (
+    <WeighInDetailShell
+      data={data}
+      isViewer={view.isViewer}
+      viewing={view.viewing}
+      otherTargets={view.otherTargets}
+    />
+  );
 }

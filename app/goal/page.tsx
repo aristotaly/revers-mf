@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function GoalPage() {
   const me = await getCurrentUser();
   if (!me) redirect("/login");
+  if (me.role === "viewer") redirect("/dashboard");
 
   const [goal, dashboard] = await Promise.all([
     getUserGoal(),

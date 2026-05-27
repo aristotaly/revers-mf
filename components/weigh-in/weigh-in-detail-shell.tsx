@@ -12,6 +12,8 @@ import {
 } from "@/lib/weigh-in/calendar";
 import { AppHeader } from "@/components/layout/app-header";
 import { EntryFormDialog } from "@/components/scale-weight/entry-form-dialog";
+import type { ViewerTarget } from "@/lib/viewer";
+import { ViewerBanner } from "@/components/viewer/viewer-banner";
 import { MonthCalendar } from "./month-calendar";
 import { MonthFilters } from "./month-filters";
 import { LegendCard } from "./legend-card";
@@ -19,9 +21,17 @@ import { YearContributionRow } from "./year-contribution-row";
 
 type WeighInDetailShellProps = {
   data: WeighInDetailPayload;
+  isViewer?: boolean;
+  viewing?: ViewerTarget;
+  otherTargets?: ViewerTarget[];
 };
 
-export function WeighInDetailShell({ data }: WeighInDetailShellProps) {
+export function WeighInDetailShell({
+  data,
+  isViewer,
+  viewing,
+  otherTargets,
+}: WeighInDetailShellProps) {
   // `todayUtc()` returns a fresh Date object every call; memoise so dependent
   // `useMemo`s don't re-run on every render.
   const today = useMemo(() => todayUtc(), []);
@@ -70,6 +80,7 @@ export function WeighInDetailShell({ data }: WeighInDetailShellProps) {
 
   function handleDayClick(cell: CalendarCell) {
     if (cell.isFuture) return;
+    if (isViewer) return;
     setSelected({ date: cell.date });
     setDialogOpen(true);
   }
@@ -77,6 +88,13 @@ export function WeighInDetailShell({ data }: WeighInDetailShellProps) {
   return (
     <div className="min-h-screen bg-neutral-50 pb-24">
       <AppHeader title="Weigh-In" backHref="/dashboard" />
+      {isViewer && viewing && (
+        <ViewerBanner
+          viewing={viewing}
+          otherTargets={otherTargets ?? []}
+          redirectTo="/weigh-in"
+        />
+      )}
 
       <div className="space-y-6 px-4 py-5">
         <MetricsBar
@@ -112,7 +130,7 @@ export function WeighInDetailShell({ data }: WeighInDetailShellProps) {
         </section>
       </div>
 
-      {selected && (
+      {!isViewer && selected && (
         <EntryFormDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getSessionUserId } from "@/lib/session";
+import { getSessionUserId, requireWriter } from "@/lib/session";
 import { buildDailySeries, normalizeDate } from "@/utils/analytics";
 import { defaultGoalStartWeight } from "@/utils/goal-progress";
 
@@ -12,10 +12,10 @@ const goalSchema = z.object({
   startWeight: z.coerce.number().positive().max(500).optional(),
 });
 
-async function requireUserId(): Promise<string> {
-  const userId = await getSessionUserId();
-  if (!userId) throw new Error("Unauthorized");
-  return userId;
+/** Throws for viewers; they must not mutate goals. */
+async function requireWriterUserId(): Promise<string> {
+  const me = await requireWriter();
+  return me.id;
 }
 
 export type UserGoal = {
@@ -41,7 +41,7 @@ export async function getUserGoal(): Promise<UserGoal | null> {
 }
 
 export async function upsertUserGoal(formData: FormData) {
-  const userId = await requireUserId();
+  const userId = await requireWriterUserId();
   const parsed = goalSchema.safeParse({
     targetWeight: formData.get("targetWeight"),
     startWeight: formData.get("startWeight") || undefined,
@@ -106,7 +106,7 @@ export async function upsertUserGoal(formData: FormData) {
 }
 
 export async function deleteUserGoal() {
-  const userId = await requireUserId();
+  const userId = await requireWriterUserId();
   await prisma.weightGoal.deleteMany({ where: { userId } });
   revalidatePath("/dashboard");
   revalidatePath("/goal");

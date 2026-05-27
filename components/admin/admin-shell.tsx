@@ -36,7 +36,9 @@ export function AdminShell({ currentUserId, users }: AdminShellProps) {
       <div className="px-4 pt-3 pb-2 text-sm text-neutral-500">
         {users.length} {users.length === 1 ? "user" : "users"} ·{" "}
         {users.filter((u) => u.role === "admin").length} admin
-        {users.filter((u) => u.role === "admin").length === 1 ? "" : "s"}
+        {users.filter((u) => u.role === "admin").length === 1 ? "" : "s"} ·{" "}
+        {users.filter((u) => u.role === "viewer").length} viewer
+        {users.filter((u) => u.role === "viewer").length === 1 ? "" : "s"}
       </div>
 
       <UserList users={users} currentUserId={currentUserId} />

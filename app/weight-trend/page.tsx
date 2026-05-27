@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/session";
+import { resolvePageView } from "@/lib/viewer";
 import { buildDailySeries, normalizeDate } from "@/utils/analytics";
 import { WeightTrendShell } from "@/components/weight-trend/weight-trend-shell";
 
@@ -14,6 +15,9 @@ export default async function WeightTrendPage({ searchParams }: Props) {
   const me = await getCurrentUser();
   if (!me) redirect("/login");
 
+  const view = await resolvePageView(me);
+  if (!view) redirect("/dashboard");
+
   const params = await searchParams;
   // Optional deterministic "today" for tests / replay. Format: YYYY-MM-DD.
   let fixedDate: Date | undefined;
@@ -23,7 +27,7 @@ export default async function WeightTrendPage({ searchParams }: Props) {
   }
 
   const entries = await prisma.weightEntry.findMany({
-    where: { userId: me.id },
+    where: { userId: view.viewing.id },
     orderBy: { date: "asc" },
   });
 
@@ -39,7 +43,10 @@ export default async function WeightTrendPage({ searchParams }: Props) {
       allPoints={allPoints}
       loggedEntries={loggedEntries}
       fixedDate={fixedDate ? normalizeDate(fixedDate) : undefined}
-      currentUser={me}
+      currentUser={view.session}
+      viewing={view.viewing}
+      isViewer={view.isViewer}
+      otherTargets={view.otherTargets}
     />
   );
 }

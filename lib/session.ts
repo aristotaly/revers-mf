@@ -8,12 +8,20 @@ type SessionPayload = {
   userId: string;
 };
 
+export type Role = "admin" | "user" | "viewer";
+
 export type CurrentUser = {
   id: string;
   username: string;
   name: string;
-  role: "admin" | "user";
+  role: Role;
 };
+
+function normalizeRole(role: string): Role {
+  if (role === "admin") return "admin";
+  if (role === "viewer") return "viewer";
+  return "user";
+}
 
 function getSecret(): string {
   return process.env.SESSION_SECRET ?? "dev-secret-change-in-production";
@@ -80,7 +88,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     id: user.id,
     username: user.username,
     name: user.name,
-    role: user.role === "admin" ? "admin" : "user",
+    role: normalizeRole(user.role),
   };
 }
 
@@ -93,5 +101,17 @@ export async function requireUser(): Promise<CurrentUser> {
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await requireUser();
   if (user.role !== "admin") throw new Error("Forbidden: admin only");
+  return user;
+}
+
+/**
+ * Throws if the caller is a viewer — viewers may not mutate any data.
+ * Use in every server action that writes.
+ */
+export async function requireWriter(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (user.role === "viewer") {
+    throw new Error("Forbidden: viewer accounts are read-only");
+  }
   return user;
 }

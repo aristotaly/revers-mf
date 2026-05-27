@@ -15,6 +15,14 @@ export async function listUsersForAdmin(
       role: true,
       createdAt: true,
       _count: { select: { weightEntries: true } },
+      viewerAccess: {
+        select: {
+          target: {
+            select: { id: true, username: true, name: true },
+          },
+        },
+        orderBy: { target: { name: "asc" } },
+      },
     },
   });
 
@@ -22,8 +30,9 @@ export async function listUsersForAdmin(
     id: u.id,
     username: u.username,
     name: u.name,
-    role: u.role === "admin" ? "admin" : "user",
+    role: u.role === "admin" ? "admin" : u.role === "viewer" ? "viewer" : "user",
     entryCount: u._count.weightEntries,
     createdAt: u.createdAt.toISOString(),
+    viewerTargets: u.viewerAccess.map((v) => v.target),
   }));
 }

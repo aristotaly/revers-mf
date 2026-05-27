@@ -9,9 +9,11 @@ import { EntryFormDialog } from "@/components/scale-weight/entry-form-dialog";
 type WeighInCardProps = {
   days: WeighInDay[];
   weekLogged: number;
+  /** Viewers can't open the add/edit dialog — squares only show data. */
+  readOnly?: boolean;
 };
 
-export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
+export function WeighInCard({ days, weekLogged, readOnly }: WeighInCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selected, setSelected] = useState<{
     date: string;
@@ -19,6 +21,7 @@ export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
   } | null>(null);
 
   function openDay(day: WeighInDay) {
+    if (readOnly) return;
     setSelected({ date: day.date, weight: day.weight });
     setDialogOpen(true);
   }
@@ -47,22 +50,34 @@ export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
                 e.stopPropagation();
                 openDay(day);
               }}
+              disabled={readOnly}
               className={
                 "aspect-square min-h-[12px] rounded-[5px] transition-colors " +
                 (day.hasEntry
-                  ? "bg-emerald-500 hover:bg-emerald-600"
-                  : "bg-neutral-100 hover:bg-neutral-200")
+                  ? "bg-emerald-500"
+                  : "bg-neutral-100") +
+                (readOnly
+                  ? " cursor-default"
+                  : day.hasEntry
+                    ? " hover:bg-emerald-600"
+                    : " hover:bg-neutral-200")
               }
               title={
-                day.hasEntry
-                  ? `${day.date}: ${day.weight} kg`
-                  : `${day.date}: log weight`
+                readOnly
+                  ? day.hasEntry
+                    ? `${day.date}: ${day.weight} kg`
+                    : `${day.date}: no entry`
+                  : day.hasEntry
+                    ? `${day.date}: ${day.weight} kg`
+                    : `${day.date}: log weight`
               }
               data-testid={`weigh-in-day-${day.date}`}
               aria-label={
                 day.hasEntry
-                  ? `Edit ${day.weight} kg on ${day.date}`
-                  : `Log weight for ${day.date}`
+                  ? `${day.weight} kg on ${day.date}`
+                  : readOnly
+                    ? `No entry for ${day.date}`
+                    : `Log weight for ${day.date}`
               }
             />
           ))}
@@ -81,7 +96,7 @@ export function WeighInCard({ days, weekLogged }: WeighInCardProps) {
         </Link>
       </div>
 
-      {selected && (
+      {!readOnly && selected && (
         <EntryFormDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}

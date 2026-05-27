@@ -5,14 +5,20 @@ import Link from "next/link";
 import { AppHeader } from "@/components/layout/app-header";
 import { InstallPrompt } from "@/components/install-prompt";
 import type { DailyPoint } from "@/utils/analytics";
+import type { CurrentUser } from "@/lib/session";
+import type { ViewerTarget } from "@/lib/viewer";
 import { DashboardClient } from "./dashboard-client";
 import { TutorialBanner } from "./tutorial-banner";
+import { ViewerBanner } from "@/components/viewer/viewer-banner";
 
 type WeightTrendShellProps = {
   allPoints: DailyPoint[];
   loggedEntries: { date: Date; weight: number }[];
   fixedDate?: Date;
-  currentUser?: { username: string; name: string; role: "admin" | "user" };
+  currentUser?: CurrentUser;
+  viewing?: ViewerTarget;
+  isViewer?: boolean;
+  otherTargets?: ViewerTarget[];
 };
 
 export function WeightTrendShell({
@@ -20,6 +26,9 @@ export function WeightTrendShell({
   loggedEntries,
   fixedDate,
   currentUser,
+  viewing,
+  isViewer,
+  otherTargets,
 }: WeightTrendShellProps) {
   const [showTutorial, setShowTutorial] = useState(false);
 
@@ -31,6 +40,9 @@ export function WeightTrendShell({
         showTutorialIcon
         onTutorialClick={() => setShowTutorial(true)}
       />
+      {isViewer && viewing && (
+        <ViewerBanner viewing={viewing} otherTargets={otherTargets ?? []} />
+      )}
       <InstallPrompt />
       <DashboardClient
         allPoints={allPoints}
@@ -44,9 +56,11 @@ export function WeightTrendShell({
         />
       )}
       <nav className="flex flex-wrap justify-center gap-4 px-4 pb-6 text-sm">
-        <Link href="/scale-weight" className="text-violet-700 underline">
-          Scale Weight
-        </Link>
+        {!isViewer && (
+          <Link href="/scale-weight" className="text-violet-700 underline">
+            Scale Weight
+          </Link>
+        )}
         <Link href="/weight-trend/logs" className="text-violet-700 underline">
           Trend Logs
         </Link>
